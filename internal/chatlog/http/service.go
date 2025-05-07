@@ -41,6 +41,7 @@ func NewService(ctx *ctx.Context, db *database.Service, mcp *mcp.Service) *Servi
 		errors.RecoveryMiddleware(),
 		errors.ErrorHandlerMiddleware(),
 		gin.LoggerWithWriter(log.Logger),
+		Cors(),
 	)
 
 	s := &Service{
