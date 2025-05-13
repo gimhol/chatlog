@@ -201,6 +201,10 @@ func (s *Service) toolsCall(session *mcp.Session, req *mcp.Request) error {
 		if v, ok := callReq.Arguments["keyword"]; ok {
 			keyword = v.(string)
 		}
+		asc := true
+		if v, ok := callReq.Arguments["asc"]; ok {
+			asc = v.(bool)
+		}
 		limit := util.MustAnyToInt(callReq.Arguments["limit"])
 		offset := util.MustAnyToInt(callReq.Arguments["offset"])
 
@@ -212,6 +216,7 @@ func (s *Service) toolsCall(session *mcp.Session, req *mcp.Request) error {
 		o.Keyword = keyword
 		o.Limit = limit
 		o.Offset = offset
+		o.Asc = asc
 
 		messages, err := s.db.GetMessages(o)
 		if err != nil {
@@ -296,6 +301,7 @@ func (s *Service) resourcesRead(session *mcp.Session, req *mcp.Request) error {
 		o.Keyword = ""
 		o.Limit = limit
 		o.Offset = offset
+		o.Asc = true
 
 		messages, err := s.db.GetMessages(o)
 		if err != nil {

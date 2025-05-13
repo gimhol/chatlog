@@ -83,6 +83,7 @@ func (s *Service) GetChatlog(c *gin.Context) {
 		Limit   int    `form:"limit"`
 		Offset  int    `form:"offset"`
 		Format  string `form:"format"`
+		Asc     bool   `form:"asc"`
 	}{}
 
 	if err := c.BindQuery(&q); err != nil {
@@ -106,10 +107,11 @@ func (s *Service) GetChatlog(c *gin.Context) {
 	o.StartTime = start
 	o.EndTime = end
 	o.Talker = q.Talker
-	o.Sender = o.Sender
+	o.Sender = q.Sender
 	o.Keyword = q.Keyword
 	o.Limit = q.Limit
 	o.Offset = q.Offset
+	o.Asc = q.Asc
 
 	messages, err := s.db.GetMessages(o)
 	if err != nil {
