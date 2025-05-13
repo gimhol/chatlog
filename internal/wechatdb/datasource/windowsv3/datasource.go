@@ -16,6 +16,7 @@ import (
 	"github.com/sjzar/chatlog/internal/errors"
 	"github.com/sjzar/chatlog/internal/model"
 	"github.com/sjzar/chatlog/internal/wechatdb/datasource/dbm"
+	"github.com/sjzar/chatlog/internal/wechatdb/datasource/opts"
 	"github.com/sjzar/chatlog/pkg/util"
 )
 
@@ -222,7 +223,15 @@ func (ds *DataSource) getDBInfosForTimeRange(startTime, endTime time.Time) []Mes
 	return dbs
 }
 
-func (ds *DataSource) GetMessages(ctx context.Context, startTime, endTime time.Time, talker string, sender string, keyword string, limit, offset int) ([]*model.Message, error) {
+func (ds *DataSource) GetMessages(ctx context.Context, opts *opts.OptsGetMessages) ([]*model.Message, error) {
+	var talker = opts.Talker
+	var startTime = opts.StartTime
+	var endTime = opts.EndTime
+	var sender = opts.Sender
+	var keyword = opts.Keyword
+	var limit = opts.Limit
+	var offset = opts.Offset
+
 	if talker == "" {
 		return nil, errors.ErrTalkerEmpty
 	}
@@ -283,13 +292,19 @@ func (ds *DataSource) GetMessages(ctx context.Context, startTime, endTime time.T
 				args = append(args, talkerItem)
 			}
 
+			var orderMode string
+			if opts == nil || opts.Asc {
+				orderMode = "ASC"
+			} else {
+				orderMode = "DESC"
+			}
 			query := fmt.Sprintf(`
 				SELECT MsgSvrID, Sequence, CreateTime, StrTalker, IsSender, 
 					Type, SubType, StrContent, CompressContent, BytesExtra
 				FROM MSG 
 				WHERE %s 
-				ORDER BY Sequence ASC
-			`, strings.Join(conditions, " AND "))
+				ORDER BY Sequence %s
+			`, strings.Join(conditions, " AND "), orderMode)
 
 			// 执行查询
 			rows, err := db.QueryContext(ctx, query, args...)

@@ -18,6 +18,7 @@ import (
 	"github.com/sjzar/chatlog/internal/errors"
 	"github.com/sjzar/chatlog/internal/model"
 	"github.com/sjzar/chatlog/internal/wechatdb/datasource/dbm"
+	"github.com/sjzar/chatlog/internal/wechatdb/datasource/opts"
 	"github.com/sjzar/chatlog/pkg/util"
 )
 
@@ -177,7 +178,15 @@ func (ds *DataSource) getDBInfosForTimeRange(startTime, endTime time.Time) []Mes
 	return dbs
 }
 
-func (ds *DataSource) GetMessages(ctx context.Context, startTime, endTime time.Time, talker string, sender string, keyword string, limit, offset int) ([]*model.Message, error) {
+func (ds *DataSource) GetMessages(ctx context.Context, opts *opts.OptsGetMessages) ([]*model.Message, error) {
+	var talker = opts.Talker
+	var startTime = opts.StartTime
+	var endTime = opts.EndTime
+	var sender = opts.Sender
+	var keyword = opts.Keyword
+	var limit = opts.Limit
+	var offset = opts.Offset
+
 	if talker == "" {
 		return nil, errors.ErrTalkerEmpty
 	}
@@ -248,14 +257,20 @@ func (ds *DataSource) GetMessages(ctx context.Context, startTime, endTime time.T
 			args := []interface{}{startTime.Unix(), endTime.Unix()}
 			log.Debug().Msgf("Table name: %s", tableName)
 			log.Debug().Msgf("Start time: %d, End time: %d", startTime.Unix(), endTime.Unix())
+			var orderMode string
+			if opts == nil || opts.Asc {
+				orderMode = "ASC"
+			} else {
+				orderMode = "DESC"
+			}
 
 			query := fmt.Sprintf(`
 				SELECT m.sort_seq, m.server_id, m.local_type, n.user_name, m.create_time, m.message_content, m.packed_info_data, m.status
 				FROM %s m
 				LEFT JOIN Name2Id n ON m.real_sender_id = n.rowid
 				WHERE %s 
-				ORDER BY m.sort_seq ASC
-			`, tableName, strings.Join(conditions, " AND "))
+				ORDER BY m.sort_seq %s
+			`, tableName, strings.Join(conditions, " AND "), orderMode)
 
 			// 执行查询
 			rows, err := db.QueryContext(ctx, query, args...)
