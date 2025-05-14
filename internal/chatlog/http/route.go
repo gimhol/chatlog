@@ -83,7 +83,7 @@ func (s *Service) GetChatlog(c *gin.Context) {
 		Limit   int    `form:"limit"`
 		Offset  int    `form:"offset"`
 		Format  string `form:"format"`
-		Asc     bool   `form:"asc"`
+		Asc     bool   `form:"asc,default=true"`
 	}{}
 
 	if err := c.BindQuery(&q); err != nil {
