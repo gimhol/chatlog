@@ -274,6 +274,7 @@ func (ds *DataSource) GetMessages(ctx context.Context, opts opts.OptsGetMessages
 	// 从每个相关数据库中查询消息
 	filteredMessages := []*model.Message{}
 
+dbLoop:
 	for _, dbInfo := range dbInfos {
 		// 检查上下文是否已取消
 		if err := ctx.Err(); err != nil {
@@ -384,21 +385,7 @@ func (ds *DataSource) GetMessages(ctx context.Context, opts opts.OptsGetMessages
 				if limit > 0 && len(filteredMessages) >= offset+limit {
 					// 已经获取了足够的消息，可以提前返回
 					rows.Close()
-
-					// 对所有消息按时间排序
-					sort.Slice(filteredMessages, func(i, j int) bool {
-						return filteredMessages[i].Seq < filteredMessages[j].Seq
-					})
-
-					// 处理分页
-					if offset >= len(filteredMessages) {
-						return []*model.Message{}, nil
-					}
-					end := offset + limit
-					if end > len(filteredMessages) {
-						end = len(filteredMessages)
-					}
-					return filteredMessages[offset:end], nil
+					break dbLoop
 				}
 			}
 			rows.Close()
@@ -407,7 +394,12 @@ func (ds *DataSource) GetMessages(ctx context.Context, opts opts.OptsGetMessages
 
 	// 对所有消息按时间排序
 	sort.Slice(filteredMessages, func(i, j int) bool {
-		return filteredMessages[i].Seq < filteredMessages[j].Seq
+		var a = filteredMessages[i].Seq
+		var b = filteredMessages[j].Seq
+		if opts.Asc {
+			return a < b
+		}
+		return a > b
 	})
 
 	// 处理分页
@@ -415,10 +407,7 @@ func (ds *DataSource) GetMessages(ctx context.Context, opts opts.OptsGetMessages
 		if offset >= len(filteredMessages) {
 			return []*model.Message{}, nil
 		}
-		end := offset + limit
-		if end > len(filteredMessages) {
-			end = len(filteredMessages)
-		}
+		end := min(offset+limit, len(filteredMessages))
 		return filteredMessages[offset:end], nil
 	}
 
