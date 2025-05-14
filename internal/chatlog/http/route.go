@@ -113,7 +113,7 @@ func (s *Service) GetChatlog(c *gin.Context) {
 	o.Offset = q.Offset
 	o.Asc = q.Asc
 
-	messages, err := s.db.GetMessages(o)
+	messages, err := s.db.GetMessages(*o)
 	if err != nil {
 		errors.Err(c, err)
 		return
