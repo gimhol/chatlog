@@ -218,7 +218,7 @@ func (s *Service) toolsCall(session *mcp.Session, req *mcp.Request) error {
 		o.Offset = offset
 		o.Asc = asc
 
-		messages, err := s.db.GetMessages(o)
+		messages, err := s.db.GetMessages(*o)
 		if err != nil {
 			return fmt.Errorf("无法获取聊天记录: %v", err)
 		}
@@ -303,7 +303,7 @@ func (s *Service) resourcesRead(session *mcp.Session, req *mcp.Request) error {
 		o.Offset = offset
 		o.Asc = true
 
-		messages, err := s.db.GetMessages(o)
+		messages, err := s.db.GetMessages(*o)
 		if err != nil {
 			return fmt.Errorf("无法获取聊天记录: %v", err)
 		}
