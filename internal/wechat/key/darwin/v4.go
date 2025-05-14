@@ -7,6 +7,8 @@ import (
 	"runtime"
 	"sync"
 
+	l "log"
+
 	"github.com/rs/zerolog/log"
 
 	"github.com/sjzar/chatlog/internal/errors"
@@ -41,6 +43,7 @@ func NewV4Extractor() *V4Extractor {
 }
 
 func (e *V4Extractor) Extract(ctx context.Context, proc *model.Process) (string, error) {
+	l.Default().Print("[V4Extractor::Extract] begin")
 	if proc.Status == model.StatusOffline {
 		return "", errors.ErrWeChatOffline
 	}
@@ -116,6 +119,9 @@ func (e *V4Extractor) Extract(ctx context.Context, proc *model.Process) (string,
 
 // findMemory searches for memory regions using Glance
 func (e *V4Extractor) findMemory(ctx context.Context, pid uint32, memoryChannel chan<- []byte) error {
+
+	log.Log().Msg("findMemory")
+
 	// Initialize a Glance instance to read process memory
 	g := glance.NewGlance(pid)
 

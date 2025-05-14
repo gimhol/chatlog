@@ -39,7 +39,7 @@ func (s *Service) GetDB() *wechatdb.DB {
 	return s.db
 }
 
-func (s *Service) GetMessages(opts *opts.OptsGetMessages) ([]*model.Message, error) {
+func (s *Service) GetMessages(opts opts.OptsGetMessages) ([]*model.Message, error) {
 	return s.db.GetMessages(opts)
 }
 

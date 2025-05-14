@@ -191,7 +191,7 @@ func (ds *DataSource) initChatRoomDb() error {
 	return nil
 }
 
-func (ds *DataSource) GetMessages(ctx context.Context, opts *OptsGetMessages) ([]*model.Message, error) {
+func (ds *DataSource) GetMessages(ctx context.Context, opts OptsGetMessages) ([]*model.Message, error) {
 	var talker = opts.Talker
 	var startTime = opts.StartTime
 	var endTime = opts.EndTime
@@ -251,7 +251,7 @@ func (ds *DataSource) GetMessages(ctx context.Context, opts *OptsGetMessages) ([
 		tableName := fmt.Sprintf("Chat_%s", talkerMd5)
 
 		var orderMode string
-		if opts == nil || opts.Asc {
+		if opts.Asc {
 			orderMode = "ASC"
 		} else {
 			orderMode = "DESC"

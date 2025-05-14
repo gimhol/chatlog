@@ -16,7 +16,7 @@ import (
 type DataSource interface {
 
 	// 消息
-	GetMessages(ctx context.Context, opts *OptsGetMessages) ([]*model.Message, error)
+	GetMessages(ctx context.Context, opts OptsGetMessages) ([]*model.Message, error)
 
 	// 联系人
 	GetContacts(ctx context.Context, key string, limit, offset int) ([]*model.Contact, error)

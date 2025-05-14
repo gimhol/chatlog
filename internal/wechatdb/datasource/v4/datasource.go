@@ -178,7 +178,7 @@ func (ds *DataSource) getDBInfosForTimeRange(startTime, endTime time.Time) []Mes
 	return dbs
 }
 
-func (ds *DataSource) GetMessages(ctx context.Context, opts *opts.OptsGetMessages) ([]*model.Message, error) {
+func (ds *DataSource) GetMessages(ctx context.Context, opts opts.OptsGetMessages) ([]*model.Message, error) {
 	var talker = opts.Talker
 	var startTime = opts.StartTime
 	var endTime = opts.EndTime
@@ -202,6 +202,16 @@ func (ds *DataSource) GetMessages(ctx context.Context, opts *opts.OptsGetMessage
 	if len(dbInfos) == 0 {
 		return nil, errors.TimeRangeNotFound(startTime, endTime)
 	}
+
+	// 根据升降序，调整数据库文件的读取顺序
+	sort.SliceStable(dbInfos, func(i, j int) bool {
+		var a = dbInfos[i].StartTime
+		var b = dbInfos[j].StartTime
+		if opts.Asc {
+			return a.Before(b)
+		}
+		return a.After(b)
+	})
 
 	// 解析sender参数，支持多个发送者（以英文逗号分隔）
 	senders := util.Str2List(sender, ",")
@@ -258,10 +268,22 @@ func (ds *DataSource) GetMessages(ctx context.Context, opts *opts.OptsGetMessage
 			log.Debug().Msgf("Table name: %s", tableName)
 			log.Debug().Msgf("Start time: %d, End time: %d", startTime.Unix(), endTime.Unix())
 			var orderMode string
-			if opts == nil || opts.Asc {
+			if opts.Asc {
 				orderMode = "ASC"
 			} else {
 				orderMode = "DESC"
+			}
+
+			// 应用sender过滤
+			sendersLen := len(senders)
+			if sendersLen > 0 {
+				temp := make([]string, sendersLen)
+				for i := range sendersLen {
+					temp[i] = "?"
+				}
+				args = append(args, senders)
+				condition := "n.user_name IN (" + strings.Join(temp, ",") + ")"
+				conditions = append(conditions, condition)
 			}
 
 			query := fmt.Sprintf(`
@@ -303,20 +325,6 @@ func (ds *DataSource) GetMessages(ctx context.Context, opts *opts.OptsGetMessage
 
 				// 将消息转换为标准格式
 				message := msg.Wrap(talkerItem)
-
-				// 应用sender过滤
-				if len(senders) > 0 {
-					senderMatch := false
-					for _, s := range senders {
-						if message.Sender == s {
-							senderMatch = true
-							break
-						}
-					}
-					if !senderMatch {
-						continue // 不匹配sender，跳过此消息
-					}
-				}
 
 				// 应用keyword过滤
 				if regex != nil {

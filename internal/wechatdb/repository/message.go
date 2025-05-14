@@ -12,7 +12,7 @@ import (
 )
 
 // GetMessages 实现 Repository 接口的 GetMessages 方法
-func (r *Repository) GetMessages(ctx context.Context, opts *opts.OptsGetMessages) ([]*model.Message, error) {
+func (r *Repository) GetMessages(ctx context.Context, opts opts.OptsGetMessages) ([]*model.Message, error) {
 
 	var talker, sender = r.parseTalkerAndSender(ctx, opts.Talker, opts.Sender)
 

@@ -57,7 +57,7 @@ func (w *DB) Initialize() error {
 	return nil
 }
 
-func (w *DB) GetMessages(opts *opts.OptsGetMessages) ([]*model.Message, error) {
+func (w *DB) GetMessages(opts opts.OptsGetMessages) ([]*model.Message, error) {
 	ctx := context.Background()
 
 	// 使用 repository 获取消息

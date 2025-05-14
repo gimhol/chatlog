@@ -223,7 +223,7 @@ func (ds *DataSource) getDBInfosForTimeRange(startTime, endTime time.Time) []Mes
 	return dbs
 }
 
-func (ds *DataSource) GetMessages(ctx context.Context, opts *opts.OptsGetMessages) ([]*model.Message, error) {
+func (ds *DataSource) GetMessages(ctx context.Context, opts opts.OptsGetMessages) ([]*model.Message, error) {
 	var talker = opts.Talker
 	var startTime = opts.StartTime
 	var endTime = opts.EndTime
@@ -247,6 +247,16 @@ func (ds *DataSource) GetMessages(ctx context.Context, opts *opts.OptsGetMessage
 	if len(dbInfos) == 0 {
 		return nil, errors.TimeRangeNotFound(startTime, endTime)
 	}
+
+	// 根据升降序，调整数据库文件的读取顺序
+	sort.SliceStable(dbInfos, func(i, j int) bool {
+		var a = dbInfos[i].StartTime
+		var b = dbInfos[j].StartTime
+		if opts.Asc {
+			return a.Before(b)
+		}
+		return a.After(b)
+	})
 
 	// 解析sender参数，支持多个发送者（以英文逗号分隔）
 	senders := util.Str2List(sender, ",")
@@ -293,7 +303,7 @@ func (ds *DataSource) GetMessages(ctx context.Context, opts *opts.OptsGetMessage
 			}
 
 			var orderMode string
-			if opts == nil || opts.Asc {
+			if opts.Asc {
 				orderMode = "ASC"
 			} else {
 				orderMode = "DESC"
