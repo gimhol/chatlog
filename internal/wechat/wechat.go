@@ -2,6 +2,7 @@ package wechat
 
 import (
 	"context"
+	"log"
 	"os"
 
 	"github.com/sjzar/chatlog/internal/errors"
@@ -97,11 +98,13 @@ func (a *Account) GetKey(ctx context.Context) (string, error) {
 
 	extractor.SetValidate(validator)
 
+	log.Default().Print("Extract start")
 	// 提取密钥
 	key, err := extractor.Extract(ctx, process)
 	if err != nil {
 		return "", err
 	}
+	log.Default().Print("Extract end")
 
 	// 保存密钥
 	a.Key = key

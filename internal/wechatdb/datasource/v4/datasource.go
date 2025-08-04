@@ -18,6 +18,7 @@ import (
 	"github.com/sjzar/chatlog/internal/errors"
 	"github.com/sjzar/chatlog/internal/model"
 	"github.com/sjzar/chatlog/internal/wechatdb/datasource/dbm"
+	"github.com/sjzar/chatlog/internal/wechatdb/datasource/opts"
 	"github.com/sjzar/chatlog/pkg/util"
 )
 
@@ -177,7 +178,15 @@ func (ds *DataSource) getDBInfosForTimeRange(startTime, endTime time.Time) []Mes
 	return dbs
 }
 
-func (ds *DataSource) GetMessages(ctx context.Context, startTime, endTime time.Time, talker string, sender string, keyword string, limit, offset int) ([]*model.Message, error) {
+func (ds *DataSource) GetMessages(ctx context.Context, opts opts.OptsGetMessages) ([]*model.Message, error) {
+	var talker = opts.Talker
+	var startTime = opts.StartTime
+	var endTime = opts.EndTime
+	var sender = opts.Sender
+	var keyword = opts.Keyword
+	var limit = opts.Limit
+	var offset = opts.Offset
+
 	if talker == "" {
 		return nil, errors.ErrTalkerEmpty
 	}
@@ -193,6 +202,16 @@ func (ds *DataSource) GetMessages(ctx context.Context, startTime, endTime time.T
 	if len(dbInfos) == 0 {
 		return nil, errors.TimeRangeNotFound(startTime, endTime)
 	}
+
+	// 根据升降序，调整数据库文件的读取顺序
+	sort.SliceStable(dbInfos, func(i, j int) bool {
+		var a = dbInfos[i].StartTime
+		var b = dbInfos[j].StartTime
+		if opts.Asc {
+			return a.Before(b)
+		}
+		return a.After(b)
+	})
 
 	// 解析sender参数，支持多个发送者（以英文逗号分隔）
 	senders := util.Str2List(sender, ",")
@@ -210,6 +229,7 @@ func (ds *DataSource) GetMessages(ctx context.Context, startTime, endTime time.T
 	// 从每个相关数据库中查询消息，并在读取时进行过滤
 	filteredMessages := []*model.Message{}
 
+dbLoop:
 	for _, dbInfo := range dbInfos {
 		// 检查上下文是否已取消
 		if err := ctx.Err(); err != nil {
@@ -248,14 +268,32 @@ func (ds *DataSource) GetMessages(ctx context.Context, startTime, endTime time.T
 			args := []interface{}{startTime.Unix(), endTime.Unix()}
 			log.Debug().Msgf("Table name: %s", tableName)
 			log.Debug().Msgf("Start time: %d, End time: %d", startTime.Unix(), endTime.Unix())
+			var orderMode string
+			if opts.Asc {
+				orderMode = "ASC"
+			} else {
+				orderMode = "DESC"
+			}
+
+			// 应用sender过滤
+			sendersLen := len(senders)
+			if sendersLen > 0 {
+				temp := make([]string, sendersLen)
+				for i := range sendersLen {
+					temp[i] = "?"
+				}
+				args = append(args, senders)
+				condition := "n.user_name IN (" + strings.Join(temp, ",") + ")"
+				conditions = append(conditions, condition)
+			}
 
 			query := fmt.Sprintf(`
 				SELECT m.sort_seq, m.server_id, m.local_type, n.user_name, m.create_time, m.message_content, m.packed_info_data, m.status
 				FROM %s m
 				LEFT JOIN Name2Id n ON m.real_sender_id = n.rowid
 				WHERE %s 
-				ORDER BY m.sort_seq ASC
-			`, tableName, strings.Join(conditions, " AND "))
+				ORDER BY m.sort_seq %s
+			`, tableName, strings.Join(conditions, " AND "), orderMode)
 
 			// 执行查询
 			rows, err := db.QueryContext(ctx, query, args...)
@@ -289,20 +327,6 @@ func (ds *DataSource) GetMessages(ctx context.Context, startTime, endTime time.T
 				// 将消息转换为标准格式
 				message := msg.Wrap(talkerItem)
 
-				// 应用sender过滤
-				if len(senders) > 0 {
-					senderMatch := false
-					for _, s := range senders {
-						if message.Sender == s {
-							senderMatch = true
-							break
-						}
-					}
-					if !senderMatch {
-						continue // 不匹配sender，跳过此消息
-					}
-				}
-
 				// 应用keyword过滤
 				if regex != nil {
 					plainText := message.PlainTextContent()
@@ -318,21 +342,7 @@ func (ds *DataSource) GetMessages(ctx context.Context, startTime, endTime time.T
 				if limit > 0 && len(filteredMessages) >= offset+limit {
 					// 已经获取了足够的消息，可以提前返回
 					rows.Close()
-
-					// 对所有消息按时间排序
-					sort.Slice(filteredMessages, func(i, j int) bool {
-						return filteredMessages[i].Seq < filteredMessages[j].Seq
-					})
-
-					// 处理分页
-					if offset >= len(filteredMessages) {
-						return []*model.Message{}, nil
-					}
-					end := offset + limit
-					if end > len(filteredMessages) {
-						end = len(filteredMessages)
-					}
-					return filteredMessages[offset:end], nil
+					break dbLoop
 				}
 			}
 			rows.Close()
@@ -341,7 +351,12 @@ func (ds *DataSource) GetMessages(ctx context.Context, startTime, endTime time.T
 
 	// 对所有消息按时间排序
 	sort.Slice(filteredMessages, func(i, j int) bool {
-		return filteredMessages[i].Seq < filteredMessages[j].Seq
+		var a = filteredMessages[i].Seq
+		var b = filteredMessages[j].Seq
+		if opts.Asc {
+			return a < b
+		}
+		return a > b
 	})
 
 	// 处理分页
@@ -349,10 +364,7 @@ func (ds *DataSource) GetMessages(ctx context.Context, startTime, endTime time.T
 		if offset >= len(filteredMessages) {
 			return []*model.Message{}, nil
 		}
-		end := offset + limit
-		if end > len(filteredMessages) {
-			end = len(filteredMessages)
-		}
+		end := min(offset+limit, len(filteredMessages))
 		return filteredMessages[offset:end], nil
 	}
 

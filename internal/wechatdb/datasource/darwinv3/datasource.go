@@ -8,7 +8,6 @@ import (
 	"regexp"
 	"sort"
 	"strings"
-	"time"
 
 	"github.com/fsnotify/fsnotify"
 	_ "github.com/mattn/go-sqlite3"
@@ -17,6 +16,7 @@ import (
 	"github.com/sjzar/chatlog/internal/errors"
 	"github.com/sjzar/chatlog/internal/model"
 	"github.com/sjzar/chatlog/internal/wechatdb/datasource/dbm"
+	. "github.com/sjzar/chatlog/internal/wechatdb/datasource/opts"
 	"github.com/sjzar/chatlog/pkg/util"
 )
 
@@ -191,7 +191,15 @@ func (ds *DataSource) initChatRoomDb() error {
 	return nil
 }
 
-func (ds *DataSource) GetMessages(ctx context.Context, startTime, endTime time.Time, talker string, sender string, keyword string, limit, offset int) ([]*model.Message, error) {
+func (ds *DataSource) GetMessages(ctx context.Context, opts OptsGetMessages) ([]*model.Message, error) {
+	var talker = opts.Talker
+	var startTime = opts.StartTime
+	var endTime = opts.EndTime
+	var sender = opts.Sender
+	var keyword = opts.Keyword
+	var limit = opts.Limit
+	var offset = opts.Offset
+
 	if talker == "" {
 		return nil, errors.ErrTalkerEmpty
 	}
@@ -219,6 +227,8 @@ func (ds *DataSource) GetMessages(ctx context.Context, startTime, endTime time.T
 	filteredMessages := []*model.Message{}
 
 	// 对每个talker进行查询
+
+talkerLoop:
 	for _, talkerItem := range talkers {
 		// 检查上下文是否已取消
 		if err := ctx.Err(); err != nil {
@@ -242,13 +252,19 @@ func (ds *DataSource) GetMessages(ctx context.Context, startTime, endTime time.T
 
 		tableName := fmt.Sprintf("Chat_%s", talkerMd5)
 
+		var orderMode string
+		if opts.Asc {
+			orderMode = "ASC"
+		} else {
+			orderMode = "DESC"
+		}
 		// 构建查询条件
 		query := fmt.Sprintf(`
 			SELECT msgCreateTime, msgContent, messageType, mesDes
 			FROM %s 
 			WHERE msgCreateTime >= ? AND msgCreateTime <= ? 
-			ORDER BY msgCreateTime ASC
-		`, tableName)
+			ORDER BY msgCreateTime %s
+		`, tableName, orderMode)
 
 		// 执行查询
 		rows, err := db.QueryContext(ctx, query, startTime.Unix(), endTime.Unix())
@@ -308,21 +324,7 @@ func (ds *DataSource) GetMessages(ctx context.Context, startTime, endTime time.T
 			if limit > 0 && len(filteredMessages) >= offset+limit {
 				// 已经获取了足够的消息，可以提前返回
 				rows.Close()
-
-				// 对所有消息按时间排序
-				sort.Slice(filteredMessages, func(i, j int) bool {
-					return filteredMessages[i].Seq < filteredMessages[j].Seq
-				})
-
-				// 处理分页
-				if offset >= len(filteredMessages) {
-					return []*model.Message{}, nil
-				}
-				end := offset + limit
-				if end > len(filteredMessages) {
-					end = len(filteredMessages)
-				}
-				return filteredMessages[offset:end], nil
+				break talkerLoop
 			}
 		}
 		rows.Close()
@@ -331,7 +333,12 @@ func (ds *DataSource) GetMessages(ctx context.Context, startTime, endTime time.T
 	// 对所有消息按时间排序
 	// FIXME 不同 talker 需要使用 Time 排序
 	sort.Slice(filteredMessages, func(i, j int) bool {
-		return filteredMessages[i].Time.Before(filteredMessages[j].Time)
+		var a = filteredMessages[i].Seq
+		var b = filteredMessages[j].Seq
+		if opts.Asc {
+			return a < b
+		}
+		return a > b
 	})
 
 	// 处理分页
@@ -339,10 +346,7 @@ func (ds *DataSource) GetMessages(ctx context.Context, startTime, endTime time.T
 		if offset >= len(filteredMessages) {
 			return []*model.Message{}, nil
 		}
-		end := offset + limit
-		if end > len(filteredMessages) {
-			end = len(filteredMessages)
-		}
+		end := min(offset+limit, len(filteredMessages))
 		return filteredMessages[offset:end], nil
 	}
 

@@ -3,19 +3,23 @@ package repository
 import (
 	"context"
 	"strings"
-	"time"
 
 	"github.com/sjzar/chatlog/internal/model"
 	"github.com/sjzar/chatlog/pkg/util"
 
 	"github.com/rs/zerolog/log"
+	"github.com/sjzar/chatlog/internal/wechatdb/datasource/opts"
 )
 
 // GetMessages 实现 Repository 接口的 GetMessages 方法
-func (r *Repository) GetMessages(ctx context.Context, startTime, endTime time.Time, talker string, sender string, keyword string, limit, offset int) ([]*model.Message, error) {
+func (r *Repository) GetMessages(ctx context.Context, opts opts.OptsGetMessages) ([]*model.Message, error) {
 
-	talker, sender = r.parseTalkerAndSender(ctx, talker, sender)
-	messages, err := r.ds.GetMessages(ctx, startTime, endTime, talker, sender, keyword, limit, offset)
+	var talker, sender = r.parseTalkerAndSender(ctx, opts.Talker, opts.Sender)
+
+	opts.Talker = talker
+	opts.Sender = sender
+
+	messages, err := r.ds.GetMessages(ctx, opts)
 	if err != nil {
 		return nil, err
 	}
