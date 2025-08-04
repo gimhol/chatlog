@@ -2,13 +2,13 @@ package wechatdb
 
 import (
 	"context"
-	"time"
 
 	"github.com/sjzar/chatlog/internal/model"
 	"github.com/sjzar/chatlog/internal/wechatdb/datasource"
 	"github.com/sjzar/chatlog/internal/wechatdb/repository"
 
 	_ "github.com/mattn/go-sqlite3"
+	opts "github.com/sjzar/chatlog/internal/wechatdb/datasource/opts"
 )
 
 type DB struct {
@@ -57,11 +57,11 @@ func (w *DB) Initialize() error {
 	return nil
 }
 
-func (w *DB) GetMessages(start, end time.Time, talker string, sender string, keyword string, limit, offset int) ([]*model.Message, error) {
+func (w *DB) GetMessages(opts opts.OptsGetMessages) ([]*model.Message, error) {
 	ctx := context.Background()
 
 	// 使用 repository 获取消息
-	messages, err := w.repo.GetMessages(ctx, start, end, talker, sender, keyword, limit, offset)
+	messages, err := w.repo.GetMessages(ctx, opts)
 	if err != nil {
 		return nil, err
 	}

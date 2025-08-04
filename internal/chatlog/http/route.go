@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/sjzar/chatlog/internal/errors"
+	"github.com/sjzar/chatlog/internal/wechatdb/datasource/opts"
 	"github.com/sjzar/chatlog/pkg/util"
 	"github.com/sjzar/chatlog/pkg/util/dat2img"
 	"github.com/sjzar/chatlog/pkg/util/silk"
@@ -82,6 +83,7 @@ func (s *Service) GetChatlog(c *gin.Context) {
 		Limit   int    `form:"limit"`
 		Offset  int    `form:"offset"`
 		Format  string `form:"format"`
+		Asc     bool   `form:"asc,default=true"`
 	}{}
 
 	if err := c.BindQuery(&q); err != nil {
@@ -101,8 +103,17 @@ func (s *Service) GetChatlog(c *gin.Context) {
 	if q.Offset < 0 {
 		q.Offset = 0
 	}
+	var o = opts.NewOptsGetMessages()
+	o.StartTime = start
+	o.EndTime = end
+	o.Talker = q.Talker
+	o.Sender = q.Sender
+	o.Keyword = q.Keyword
+	o.Limit = q.Limit
+	o.Offset = q.Offset
+	o.Asc = q.Asc
 
-	messages, err := s.db.GetMessages(start, end, q.Talker, q.Sender, q.Keyword, q.Limit, q.Offset)
+	messages, err := s.db.GetMessages(*o)
 	if err != nil {
 		errors.Err(c, err)
 		return

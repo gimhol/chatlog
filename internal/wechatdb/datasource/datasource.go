@@ -2,13 +2,13 @@ package datasource
 
 import (
 	"context"
-	"time"
 
 	"github.com/fsnotify/fsnotify"
 
 	"github.com/sjzar/chatlog/internal/errors"
 	"github.com/sjzar/chatlog/internal/model"
 	"github.com/sjzar/chatlog/internal/wechatdb/datasource/darwinv3"
+	. "github.com/sjzar/chatlog/internal/wechatdb/datasource/opts"
 	v4 "github.com/sjzar/chatlog/internal/wechatdb/datasource/v4"
 	"github.com/sjzar/chatlog/internal/wechatdb/datasource/windowsv3"
 )
@@ -16,7 +16,7 @@ import (
 type DataSource interface {
 
 	// 消息
-	GetMessages(ctx context.Context, startTime, endTime time.Time, talker string, sender string, keyword string, limit, offset int) ([]*model.Message, error)
+	GetMessages(ctx context.Context, opts OptsGetMessages) ([]*model.Message, error)
 
 	// 联系人
 	GetContacts(ctx context.Context, key string, limit, offset int) ([]*model.Contact, error)

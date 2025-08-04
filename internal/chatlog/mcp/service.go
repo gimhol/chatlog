@@ -12,6 +12,7 @@ import (
 	"github.com/sjzar/chatlog/internal/chatlog/ctx"
 	"github.com/sjzar/chatlog/internal/chatlog/database"
 	"github.com/sjzar/chatlog/internal/mcp"
+	"github.com/sjzar/chatlog/internal/wechatdb/datasource/opts"
 	"github.com/sjzar/chatlog/pkg/util"
 
 	"github.com/gin-gonic/gin"
@@ -200,9 +201,24 @@ func (s *Service) toolsCall(session *mcp.Session, req *mcp.Request) error {
 		if v, ok := callReq.Arguments["keyword"]; ok {
 			keyword = v.(string)
 		}
+		asc := true
+		if v, ok := callReq.Arguments["asc"]; ok {
+			asc = v.(bool)
+		}
 		limit := util.MustAnyToInt(callReq.Arguments["limit"])
 		offset := util.MustAnyToInt(callReq.Arguments["offset"])
-		messages, err := s.db.GetMessages(start, end, talker, sender, keyword, limit, offset)
+
+		var o = opts.NewOptsGetMessages()
+		o.StartTime = start
+		o.EndTime = end
+		o.Talker = talker
+		o.Sender = sender
+		o.Keyword = keyword
+		o.Limit = limit
+		o.Offset = offset
+		o.Asc = asc
+
+		messages, err := s.db.GetMessages(*o)
 		if err != nil {
 			return fmt.Errorf("无法获取聊天记录: %v", err)
 		}
@@ -276,7 +292,18 @@ func (s *Service) resourcesRead(session *mcp.Session, req *mcp.Request) error {
 		}
 		limit := util.MustAnyToInt(u.Query().Get("limit"))
 		offset := util.MustAnyToInt(u.Query().Get("offset"))
-		messages, err := s.db.GetMessages(start, end, u.Host, "", "", limit, offset)
+
+		var o = opts.NewOptsGetMessages()
+		o.StartTime = start
+		o.EndTime = end
+		o.Talker = u.Host
+		o.Sender = ""
+		o.Keyword = ""
+		o.Limit = limit
+		o.Offset = offset
+		o.Asc = true
+
+		messages, err := s.db.GetMessages(*o)
 		if err != nil {
 			return fmt.Errorf("无法获取聊天记录: %v", err)
 		}
