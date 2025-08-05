@@ -55,6 +55,7 @@ func (s *Service) initRouter() {
 		api.GET("/contact", s.GetContacts)
 		api.GET("/chatroom", s.GetChatRooms)
 		api.GET("/session", s.GetSessions)
+		api.GET("/info", s.GetInfo)
 	}
 
 	router.NoRoute(s.NoRoute)
@@ -397,4 +398,20 @@ func (s *Service) HandleVoice(c *gin.Context, data []byte) {
 		return
 	}
 	c.Data(http.StatusOK, "audio/mp3", out)
+}
+
+func (s *Service) GetInfo(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{
+		"account":     s.ctx.Account,
+		"platform":    s.ctx.Platform,
+		"version":     s.ctx.Version,
+		"fullVersion": s.ctx.FullVersion,
+		"dataDir":     s.ctx.DataDir,
+		"dataKey":     s.ctx.DataKey,
+		"dataUsage":   s.ctx.DataUsage,
+		"workDir":     s.ctx.WorkDir,
+		"workUsage":   s.ctx.WorkUsage,
+		"httpEnabled": s.ctx.HTTPEnabled,
+		"httpAddr":    s.ctx.HTTPAddr,
+	})
 }
