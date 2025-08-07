@@ -75,6 +75,12 @@ func (s *Service) NoRoute(c *gin.Context) {
 	}
 }
 
+type GetChatlogResp struct {
+	DataDir string           `json:"dataDir"`
+	Account string           `json:"account"`
+	Items   []*model.Message `json:"items"`
+}
+
 func (s *Service) GetChatlog(c *gin.Context) {
 
 	q := struct {
@@ -125,7 +131,11 @@ func (s *Service) GetChatlog(c *gin.Context) {
 	case "csv":
 	case "json":
 		// json
-		c.JSON(http.StatusOK, messages)
+		c.JSON(http.StatusOK, GetChatlogResp{
+			DataDir: s.ctx.DataDir,
+			Account: s.ctx.Account,
+			Items:   messages,
+		})
 	default:
 		// plain text
 		c.Writer.Header().Set("Content-Type", "text/plain; charset=utf-8")
