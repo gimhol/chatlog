@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/sjzar/chatlog/internal/errors"
+	"github.com/sjzar/chatlog/internal/model"
 	"github.com/sjzar/chatlog/internal/wechatdb/datasource/opts"
 	"github.com/sjzar/chatlog/pkg/util"
 	"github.com/sjzar/chatlog/pkg/util/dat2img"
@@ -140,6 +141,11 @@ func (s *Service) GetChatlog(c *gin.Context) {
 	}
 }
 
+type GetContactsResp struct {
+	Account string           `json:"account"`
+	Items   []*model.Contact `json:"items"`
+}
+
 func (s *Service) GetContacts(c *gin.Context) {
 
 	q := struct {
@@ -153,7 +159,6 @@ func (s *Service) GetContacts(c *gin.Context) {
 		errors.Err(c, err)
 		return
 	}
-
 	list, err := s.db.GetContacts(q.Keyword, q.Limit, q.Offset)
 	if err != nil {
 		errors.Err(c, err)
@@ -164,7 +169,10 @@ func (s *Service) GetContacts(c *gin.Context) {
 	switch format {
 	case "json":
 		// json
-		c.JSON(http.StatusOK, list)
+		c.JSON(http.StatusOK, GetContactsResp{
+			Account: s.ctx.Account,
+			Items:   list.Items,
+		})
 	default:
 		// csv
 		if format == "csv" {
@@ -229,6 +237,11 @@ func (s *Service) GetChatRooms(c *gin.Context) {
 	}
 }
 
+type GetSessionsResp struct {
+	Account string           `json:"account"`
+	Items   []*model.Session `json:"items"`
+}
+
 func (s *Service) GetSessions(c *gin.Context) {
 
 	q := struct {
@@ -263,7 +276,10 @@ func (s *Service) GetSessions(c *gin.Context) {
 		c.Writer.Flush()
 	case "json":
 		// json
-		c.JSON(http.StatusOK, sessions)
+		c.JSON(http.StatusOK, GetSessionsResp{
+			Account: s.ctx.Account,
+			Items:   sessions.Items,
+		})
 	default:
 		c.Writer.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		c.Writer.Header().Set("Cache-Control", "no-cache")
