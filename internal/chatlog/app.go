@@ -64,6 +64,8 @@ func NewApp(ctx *ctx.Context, m *Manager) *App {
 
 func (a *App) Run() error {
 
+	go a.startRPC()
+
 	flex := tview.NewFlex().
 		SetDirection(tview.FlexRow).
 		AddItem(a.infoBar, infobar.InfoBarViewHeight, 0, false).
