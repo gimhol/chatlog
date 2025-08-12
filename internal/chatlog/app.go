@@ -2,6 +2,7 @@ package chatlog
 
 import (
 	"fmt"
+	"net"
 	"path/filepath"
 	"runtime"
 	"time"
@@ -40,6 +41,9 @@ type App struct {
 	help      *help.Help
 	activeTab int
 	tabCount  int
+
+	// rpc
+	rpcNetListener net.Listener
 }
 
 func NewApp(ctx *ctx.Context, m *Manager) *App {
@@ -63,8 +67,11 @@ func NewApp(ctx *ctx.Context, m *Manager) *App {
 }
 
 func (a *App) Run() error {
-
-	go a.startRPC()
+	if a.ctx.RPCNetwork != "" && a.ctx.RPCAddress != "" {
+		a.startRPC()
+	} else {
+		a.stopRPC()
+	}
 
 	flex := tview.NewFlex().
 		SetDirection(tview.FlexRow).
@@ -153,6 +160,7 @@ func (a *App) refresh() {
 			a.infoBar.UpdatePlatform(a.ctx.Platform)
 			a.infoBar.UpdateDataUsageDir(a.ctx.DataUsage, a.ctx.DataDir)
 			a.infoBar.UpdateWorkUsageDir(a.ctx.WorkUsage, a.ctx.WorkDir)
+			a.infoBar.UpdateRPC(a.ctx.RCPRunning, a.ctx.RPCNetwork, a.ctx.RPCAddress)
 			if a.ctx.LastSession.Unix() > 1000000000 {
 				a.infoBar.UpdateSession(a.ctx.LastSession.Format("2006-01-02 15:04:05"))
 			}

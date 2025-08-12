@@ -15,7 +15,7 @@ const (
 
 // InfoBarViewHeight info bar height.
 const (
-	InfoBarViewHeight = 7
+	InfoBarViewHeight = 8
 	accountRow        = 0
 	statusRow         = 1
 	platformRow       = 2
@@ -23,6 +23,7 @@ const (
 	dataUsageRow      = 4
 	workUsageRow      = 5
 	httpServerRow     = 6
+	rpcRow            = 7
 
 	// 列索引
 	labelCol1 = 0 // 第一列标签
@@ -149,6 +150,13 @@ func New() *InfoBar {
 	)
 	table.SetCell(httpServerRow, valueCol2, tview.NewTableCell(""))
 
+	table.SetCell(
+		rpcRow,
+		labelCol1,
+		tview.NewTableCell(fmt.Sprintf(" [%s::]%s", headerColor, "RPC Server:")),
+	)
+	table.SetCell(rpcRow, valueCol1, tview.NewTableCell(""))
+
 	// infobar
 	infoBar := &InfoBar{
 		Box:   tview.NewBox(),
@@ -203,6 +211,16 @@ func (info *InfoBar) UpdateHTTPServer(server string) {
 // UpdateAutoDecrypt updates Auto Decrypt value.
 func (info *InfoBar) UpdateAutoDecrypt(text string) {
 	info.table.GetCell(httpServerRow, valueCol2).SetText(text)
+}
+
+func (info *InfoBar) UpdateRPC(running bool, network string, address string) {
+	txt := ""
+	if running {
+		txt = fmt.Sprintf("[green][已启动][white] %s[%s]", network, address)
+	} else {
+		txt = fmt.Sprintf("[未启动] %s[%s]", network, address)
+	}
+	info.table.GetCell(rpcRow, valueCol1).SetText(txt)
 }
 
 // Draw draws this primitive onto the screen.
