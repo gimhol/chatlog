@@ -1,0 +1,120 @@
+package chatlog
+
+import (
+	"log"
+	"net"
+	"net/http"
+	"net/rpc"
+
+	"github.com/sjzar/chatlog/internal/wechat"
+)
+
+func (a *App) startRPC() {
+	rpc.Register(a)
+	rpc.HandleHTTP()
+	l, err := net.Listen("tcp", ":1234")
+	if err != nil {
+		log.Fatal("[App::startRPC] listen error:", err)
+	}
+	go http.Serve(l, nil)
+}
+func (a *App) DecryptDBFiles(args *struct{}, reply *string) error {
+	err := a.m.DecryptDBFiles()
+	return err
+}
+func (a *App) StartService(args *struct{}, reply *string) error {
+	err := a.m.StartService()
+	return err
+}
+func (a *App) StopService(args *struct{}, reply *string) error {
+	err := a.m.StopService()
+	return err
+}
+func (a *App) StartAutoDecrypt(args *struct{}, reply *string) error {
+	err := a.m.StartAutoDecrypt()
+	return err
+}
+func (a *App) StopAutoDecrypt(args *struct{}, reply *string) error {
+	err := a.m.StopAutoDecrypt()
+	return err
+}
+func (a *App) RefreshSession(args *struct{}, reply *string) error {
+	err := a.m.RefreshSession()
+	return err
+}
+
+func (a *App) GetAccount(args *struct{}, reply *string) error {
+	*reply = a.m.ctx.Account
+	return nil
+}
+func (a *App) GetPlatform(args *struct{}, reply *string) error {
+	*reply = a.m.ctx.Platform
+	return nil
+}
+func (a *App) GetWXVersion(args *struct{}, reply *int) error {
+	*reply = a.m.ctx.Version
+	return nil
+}
+func (a *App) GetWXFullVersion(args *struct{}, reply *string) error {
+	*reply = a.m.ctx.FullVersion
+	return nil
+}
+func (a *App) GetDataDir(args *struct{}, reply *string) error {
+	*reply = a.m.ctx.DataDir
+	return nil
+}
+func (a *App) GetDataKey(args *struct{}, reply *string) error {
+	err := a.m.GetDataKey()
+	*reply = a.m.ctx.DataKey
+	return err
+}
+func (a *App) GetDataUsage(args *struct{}, reply *string) error {
+	*reply = a.m.ctx.DataUsage
+	return nil
+}
+func (a *App) GetWorkDir(args *struct{}, reply *string) error {
+	*reply = a.m.ctx.WorkDir
+	return nil
+}
+func (a *App) GetWorkUsage(args *struct{}, reply *string) error {
+	*reply = a.m.ctx.WorkUsage
+	return nil
+}
+func (a *App) GetHTTPEnabled(args *struct{}, reply *bool) error {
+	*reply = a.m.ctx.HTTPEnabled
+	return nil
+}
+func (a *App) GetHTTPAddr(args *struct{}, reply *string) error {
+	*reply = a.m.ctx.HTTPAddr
+	return nil
+}
+
+func (a *App) GetAutoDecrypt(args *struct{}, reply *bool) error {
+	*reply = a.m.ctx.AutoDecrypt
+	return nil
+}
+func (a *App) GetLastSession(args *struct{}, reply *int64) error {
+	*reply = a.m.ctx.LastSession.UnixMilli()
+	return nil
+}
+func (a *App) GetWXPIP(args *struct{}, reply *int) error {
+	*reply = a.m.ctx.PID
+	return nil
+}
+func (a *App) GetWXExePath(args *struct{}, reply *string) error {
+	*reply = a.m.ctx.ExePath
+	return nil
+}
+func (a *App) GetWXStatus(args *struct{}, reply *string) error {
+	*reply = a.m.ctx.Status
+	return nil
+}
+func (a *App) GetCurrentWX(args *struct{}, reply *wechat.Account) error {
+	*reply = *a.m.ctx.Current
+	return nil
+}
+
+func (a *App) GetWXInstances(args *struct{}, reply *[]*wechat.Account) error {
+	*reply = a.m.ctx.WeChatInstances
+	return nil
+}
