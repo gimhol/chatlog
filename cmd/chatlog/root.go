@@ -7,12 +7,25 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var (
+	rpcNetwork string
+	rpcAddress string
+)
+
 func init() {
 	// windows only
 	cobra.MousetrapHelpText = ""
 
 	rootCmd.PersistentFlags().BoolVar(&Debug, "debug", false, "debug")
 	rootCmd.PersistentPreRun = initLog
+	rootCmd.Flags().StringVarP(
+		&rpcNetwork, "rpc-network", "r", "",
+		"The network must be \"tcp\", \"tcp4\", \"tcp6\", \"unix\" or \"unixpacket\".",
+	)
+	rootCmd.Flags().StringVarP(
+		&rpcAddress, "rpc-address", "d", "",
+		"exmaple: \":1234\".",
+	)
 }
 
 func Execute() {
@@ -41,8 +54,9 @@ func Root(cmd *cobra.Command, args []string) {
 		log.Err(err).Msg("failed to create chatlog instance")
 		return
 	}
-
+	m.SetRPC(rpcNetwork, rpcAddress)
 	if err := m.Run(); err != nil {
 		log.Err(err).Msg("failed to run chatlog instance")
 	}
+
 }

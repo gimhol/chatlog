@@ -33,6 +33,11 @@ type Manager struct {
 	app *App
 }
 
+func (m *Manager) SetRPC(rpcNetwork string, rpcAddress string) {
+	m.ctx.RPCNetwork = rpcNetwork
+	m.ctx.RPCAddress = rpcAddress
+}
+
 func New(configPath string) (*Manager, error) {
 
 	// 创建配置服务

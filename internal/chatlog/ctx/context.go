@@ -46,6 +46,11 @@ type Context struct {
 
 	// 所有可用的微信实例
 	WeChatInstances []*wechat.Account
+
+	// RPC
+	RCPRunning bool
+	RPCNetwork string
+	RPCAddress string
 }
 
 func New(conf *conf.Service) *Context {

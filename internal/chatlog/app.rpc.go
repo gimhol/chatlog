@@ -9,15 +9,43 @@ import (
 	"github.com/sjzar/chatlog/internal/wechat"
 )
 
+/*
+network = "tcp"
+address = ":1234"
+*/
 func (a *App) startRPC() {
+	a.stopRPC()
 	rpc.Register(a)
 	rpc.HandleHTTP()
-	l, err := net.Listen("tcp", ":1234")
+
+	l, err := net.Listen(a.ctx.RPCNetwork, a.ctx.RPCAddress)
 	if err != nil {
 		log.Fatal("[App::startRPC] listen error:", err)
 	}
-	go http.Serve(l, nil)
+	a.rpcNetListener = l
+	a.ctx.RCPRunning = true
+	a.infoBar.UpdateRPC(
+		true,
+		l.Addr().Network(),
+		l.Addr().String(),
+	)
+	http.Serve(l, nil)
+	a.stopRPC()
 }
+
+func (a *App) stopRPC() {
+	if a.rpcNetListener != nil {
+		a.ctx.RCPRunning = false
+		a.infoBar.UpdateRPC(
+			false,
+			a.rpcNetListener.Addr().Network(),
+			a.rpcNetListener.Addr().String(),
+		)
+		a.rpcNetListener.Close()
+		a.rpcNetListener = nil
+	}
+}
+
 func (a *App) DecryptDBFiles(args *struct{}, reply *string) error {
 	err := a.m.DecryptDBFiles()
 	return err
