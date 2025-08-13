@@ -68,7 +68,7 @@ func NewApp(ctx *ctx.Context, m *Manager) *App {
 
 func (a *App) Run() error {
 	if a.ctx.RPCNetwork != "" && a.ctx.RPCAddress != "" {
-		a.startRPC()
+		go a.startRPC()
 	} else {
 		a.stopRPC()
 	}

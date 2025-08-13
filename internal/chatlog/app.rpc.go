@@ -6,13 +6,10 @@ import (
 	"net/http"
 	"net/rpc"
 
+	"github.com/sjzar/chatlog/internal/chatlog/conf"
 	"github.com/sjzar/chatlog/internal/wechat"
 )
 
-/*
-network = "tcp"
-address = ":1234"
-*/
 func (a *App) startRPC() {
 	a.stopRPC()
 	rpc.Register(a)
@@ -143,6 +140,28 @@ func (a *App) GetCurrentWX(args *struct{}, reply *wechat.Account) error {
 }
 
 func (a *App) GetWXInstances(args *struct{}, reply *[]*wechat.Account) error {
+	if len(a.m.ctx.WeChatInstances) == 0 {
+		a.m.ctx.WeChatInstances = a.m.wechat.GetWeChatInstances()
+		if len(a.m.ctx.WeChatInstances) >= 1 {
+			a.m.ctx.SwitchCurrent(a.m.ctx.WeChatInstances[0])
+		}
+		if a.m.ctx.HTTPEnabled {
+			// 启动HTTP服务
+			if err := a.m.StartService(); err != nil {
+				a.m.StopService()
+			}
+		}
+	}
 	*reply = a.m.ctx.WeChatInstances
+	return nil
+}
+
+func (a *App) GetHistory(args *struct{}, reply *map[string]conf.ProcessConfig) error {
+	*reply = a.m.ctx.History
+	return nil
+}
+
+func (a *App) FindProcesses(args *struct{}, reply *string) error {
+	a.m.conf.Load()
 	return nil
 }
