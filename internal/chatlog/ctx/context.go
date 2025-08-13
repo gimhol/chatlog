@@ -88,6 +88,8 @@ func (c *Context) SwitchHistory(account string) {
 		c.WorkDir = history.WorkDir
 		c.HTTPEnabled = history.HTTPEnabled
 		c.HTTPAddr = history.HTTPAddr
+		c.AutoDecrypt = history.AutoDecrypt
+		c.LastSession = time.UnixMilli(history.LastSession)
 	} else {
 		c.Account = ""
 		c.Platform = ""
@@ -98,6 +100,8 @@ func (c *Context) SwitchHistory(account string) {
 		c.WorkDir = ""
 		c.HTTPEnabled = false
 		c.HTTPAddr = ""
+		c.AutoDecrypt = false
+		c.LastSession = time.UnixMilli(0)
 	}
 }
 
@@ -187,6 +191,8 @@ func (c *Context) UpdateConfig() {
 		WorkDir:     c.WorkDir,
 		HTTPEnabled: c.HTTPEnabled,
 		HTTPAddr:    c.HTTPAddr,
+		AutoDecrypt: c.AutoDecrypt,
+		LastSession: c.LastSession.UnixMilli(),
 	}
 	conf := c.conf.GetConfig()
 	conf.UpdateHistory(c.Account, pconf)

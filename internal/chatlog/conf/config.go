@@ -1,6 +1,8 @@
 package conf
 
-import "github.com/sjzar/chatlog/pkg/config"
+import (
+	"github.com/sjzar/chatlog/pkg/config"
+)
 
 type Config struct {
 	ConfigDir   string          `mapstructure:"-"`
@@ -21,6 +23,8 @@ type ProcessConfig struct {
 	HTTPAddr    string `mapstructure:"http_addr" json:"http_addr"`
 	LastTime    int64  `mapstructure:"last_time" json:"last_time"`
 	Files       []File `mapstructure:"files" json:"files"`
+	AutoDecrypt bool   `mapstructure:"auto_decrypt" json:"auto_decrypt"`
+	LastSession int64  `mapstructure:"last_session" json:"last_session"`
 }
 
 type File struct {
