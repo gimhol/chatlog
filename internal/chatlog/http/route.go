@@ -403,7 +403,7 @@ func (s *Service) HandleDatFile(c *gin.Context, path string) {
 	}
 
 	switch ext {
-	case "jpg":
+	case "jpg", "jpeg":
 		c.Data(http.StatusOK, "image/jpeg", out)
 	case "png":
 		c.Data(http.StatusOK, "image/png", out)
@@ -411,6 +411,8 @@ func (s *Service) HandleDatFile(c *gin.Context, path string) {
 		c.Data(http.StatusOK, "image/gif", out)
 	case "bmp":
 		c.Data(http.StatusOK, "image/bmp", out)
+	case "mp4":
+		c.Data(http.StatusOK, "video/mp4", out)
 	default:
 		c.Data(http.StatusOK, "image/jpg", out)
 		// c.File(path)
