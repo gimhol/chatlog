@@ -439,5 +439,9 @@ func (s *Service) GetInfo(c *gin.Context) {
 		"workUsage":   s.ctx.WorkUsage,
 		"httpEnabled": s.ctx.HTTPEnabled,
 		"httpAddr":    s.ctx.HTTPAddr,
+		"status":      s.ctx.Status,
+		"autoDecrypt": s.ctx.AutoDecrypt,
+		"pid":         s.ctx.PID,
+		"exePath":     s.ctx.ExePath,
 	})
 }
