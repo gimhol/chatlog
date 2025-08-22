@@ -32,6 +32,9 @@ func (s *Service) initRouter() {
 	router.StaticFS("/static", http.FS(staticDir))
 	router.StaticFileFS("/favicon.ico", "./favicon.ico", http.FS(staticDir))
 	router.StaticFileFS("/", "./index.htm", http.FS(staticDir))
+	router.GET("/health", func(ctx *gin.Context) {
+		ctx.JSON(http.StatusOK, gin.H{"status": "ok"})
+	})
 
 	// Media
 	router.GET("/image/*key", s.GetImage)
@@ -50,7 +53,7 @@ func (s *Service) initRouter() {
 	}
 
 	// API V1 Router
-	api := router.Group("/api/v1")
+	api := router.Group("/api/v1", s.checkDBStateMiddleware())
 	{
 		api.GET("/chatlog", s.GetChatlog)
 		api.GET("/contact", s.GetContacts)
@@ -132,8 +135,8 @@ func (s *Service) GetChatlog(c *gin.Context) {
 	case "json":
 		// json
 		c.JSON(http.StatusOK, GetChatlogResp{
-			DataDir: s.ctx.DataDir,
-			Account: s.ctx.Account,
+			DataDir: s.conf.GetDataDir(),
+			Account: s.sys.GetAccount(),
 			Items:   messages,
 		})
 	default:
@@ -180,7 +183,7 @@ func (s *Service) GetContacts(c *gin.Context) {
 	case "json":
 		// json
 		c.JSON(http.StatusOK, GetContactsResp{
-			Account: s.ctx.Account,
+			Account: s.sys.GetAccount(),
 			Items:   list.Items,
 		})
 	default:
@@ -287,7 +290,7 @@ func (s *Service) GetSessions(c *gin.Context) {
 	case "json":
 		// json
 		c.JSON(http.StatusOK, GetSessionsResp{
-			Account: s.ctx.Account,
+			Account: s.sys.GetAccount(),
 			Items:   sessions.Items,
 		})
 	default:
@@ -334,7 +337,7 @@ func (s *Service) GetMedia(c *gin.Context, _type string) {
 	var _err error
 	for _, k := range keys {
 		if len(k) != 32 {
-			absolutePath := filepath.Join(s.ctx.DataDir, k)
+			absolutePath := filepath.Join(s.conf.GetDataDir(), k)
 			if _, err := os.Stat(absolutePath); os.IsNotExist(err) {
 				continue
 			}
@@ -369,7 +372,7 @@ func (s *Service) GetMedia(c *gin.Context, _type string) {
 func (s *Service) GetMediaData(c *gin.Context) {
 	relativePath := filepath.Clean(c.Param("path"))
 
-	absolutePath := filepath.Join(s.ctx.DataDir, relativePath)
+	absolutePath := filepath.Join(s.conf.GetDataDir(), relativePath)
 
 	if _, err := os.Stat(absolutePath); os.IsNotExist(err) {
 		c.JSON(http.StatusNotFound, gin.H{
@@ -430,20 +433,20 @@ func (s *Service) HandleVoice(c *gin.Context, data []byte) {
 
 func (s *Service) GetInfo(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
-		"account":     s.ctx.Account,
-		"platform":    s.ctx.Platform,
-		"version":     s.ctx.Version,
-		"fullVersion": s.ctx.FullVersion,
-		"dataDir":     s.ctx.DataDir,
-		"dataKey":     s.ctx.DataKey,
-		"dataUsage":   s.ctx.DataUsage,
-		"workDir":     s.ctx.WorkDir,
-		"workUsage":   s.ctx.WorkUsage,
-		"httpEnabled": s.ctx.HTTPEnabled,
-		"httpAddr":    s.ctx.HTTPAddr,
-		"status":      s.ctx.Status,
-		"autoDecrypt": s.ctx.AutoDecrypt,
-		"pid":         s.ctx.PID,
-		"exePath":     s.ctx.ExePath,
+		"account":     s.sys.GetAccount(),
+		"platform":    s.conf.GetPlatform(),
+		"version":     s.conf.GetVersion(),
+		"fullVersion": s.conf.GetFullVersion(),
+		"dataDir":     s.conf.GetDataDir(),
+		"dataKey":     s.conf.GetDataKey(),
+		"dataUsage":   s.sys.GetDataUsage(),
+		"workDir":     s.conf.GetWorkDir(),
+		"workUsage":   s.sys.GetWorkUsage(),
+		"httpEnabled": true, // dont need it
+		"httpAddr":    s.conf.GetHTTPAddr(),
+		"status":      s.sys.GetStatus(),
+		"autoDecrypt": s.conf.GetAutoDecrypt(),
+		"pid":         s.sys.GetPID(),
+		"exePath":     s.sys.GetExePath(),
 	})
 }

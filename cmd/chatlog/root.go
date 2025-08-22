@@ -48,14 +48,12 @@ var rootCmd = &cobra.Command{
 }
 
 func Root(cmd *cobra.Command, args []string) {
-
-	m, err := chatlog.New("")
-	if err != nil {
-		log.Err(err).Msg("failed to create chatlog instance")
-		return
+	m := chatlog.New()
+	opts := chatlog.RunOpts{
+		RPCNetwork: rpcNetwork,
+		RPCAddress: rpcAddress,
 	}
-	m.SetRPC(rpcNetwork, rpcAddress)
-	if err := m.Run(); err != nil {
+	if err := m.Run("", opts); err != nil {
 		log.Err(err).Msg("failed to run chatlog instance")
 	}
 

@@ -160,8 +160,3 @@ func (a *App) GetHistory(args *struct{}, reply *map[string]conf.ProcessConfig) e
 	*reply = a.m.ctx.History
 	return nil
 }
-
-func (a *App) FindProcesses(args *struct{}, reply *string) error {
-	a.m.conf.Load()
-	return nil
-}
