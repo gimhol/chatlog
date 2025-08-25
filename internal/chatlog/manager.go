@@ -11,7 +11,6 @@ import (
 	"github.com/sjzar/chatlog/internal/chatlog/ctx"
 	"github.com/sjzar/chatlog/internal/chatlog/database"
 	"github.com/sjzar/chatlog/internal/chatlog/http"
-	"github.com/sjzar/chatlog/internal/chatlog/mcp"
 	"github.com/sjzar/chatlog/internal/chatlog/wechat"
 	iwechat "github.com/sjzar/chatlog/internal/wechat"
 	"github.com/sjzar/chatlog/pkg/config"
@@ -28,7 +27,6 @@ type Manager struct {
 	// Services
 	db     *database.Service
 	http   *http.Service
-	mcp    *mcp.Service
 	wechat *wechat.Service
 
 	// Terminal UI
@@ -58,9 +56,7 @@ func (m *Manager) Run(configPath string, opts RunOpts) error {
 
 	m.db = database.NewService(m.ctx)
 
-	m.mcp = mcp.NewService(m.db)
-
-	m.http = http.NewService(m.ctx, m.db, m.mcp, m)
+	m.http = http.NewService(m.ctx, m.db, m)
 
 	m.ctx.WeChatInstances = m.wechat.GetWeChatInstances()
 	if len(m.ctx.WeChatInstances) >= 1 {
@@ -126,13 +122,7 @@ func (m *Manager) StartService() error {
 		return err
 	}
 
-	if err := m.mcp.Start(); err != nil {
-		m.db.Stop() // 回滚已启动的服务
-		return err
-	}
-
 	if err := m.http.Start(); err != nil {
-		m.mcp.Stop() // 回滚已启动的服务
 		m.db.Stop()
 		return err
 	}
@@ -165,10 +155,6 @@ func (m *Manager) stopService() error {
 	var errs []error
 
 	if err := m.http.Stop(); err != nil {
-		errs = append(errs, err)
-	}
-
-	if err := m.mcp.Stop(); err != nil {
 		errs = append(errs, err)
 	}
 
@@ -398,9 +384,7 @@ func (m *Manager) CommandHTTPServer(configPath string, cmdConf map[string]any) e
 
 	m.db = database.NewService(m.sc)
 
-	m.mcp = mcp.NewService(m.db)
-
-	m.http = http.NewService(m.ctx, m.db, m.mcp, m)
+	m.http = http.NewService(m.sc, m.db, m)
 
 	if m.sc.GetAutoDecrypt() {
 		if err := m.wechat.StartAutoDecrypt(); err != nil {
@@ -438,11 +422,6 @@ func (m *Manager) CommandHTTPServer(configPath string, cmdConf map[string]any) e
 			}
 		}
 	}()
-
-	if err := m.mcp.Start(); err != nil {
-		return err
-	}
-	defer m.mcp.Stop()
 
 	return m.http.ListenAndServe()
 }
