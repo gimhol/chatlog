@@ -299,3 +299,15 @@ func (c *Context) UpdateConfig() {
 		}
 	}
 }
+
+func (c *Context) GetImgKey() string {
+	return c.ImgKey
+}
+
+func (c *Context) GetAutoDecrypt() bool {
+	return c.AutoDecrypt
+}
+
+func (c *Context) GetFullVersion() string {
+	return c.FullVersion
+}

@@ -13,6 +13,7 @@ import (
 
 	"github.com/sjzar/chatlog/internal/chatlog/conf"
 	"github.com/sjzar/chatlog/internal/errors"
+	"github.com/sjzar/chatlog/internal/wechatdb/datasource/opts"
 	"github.com/sjzar/chatlog/pkg/util"
 	"github.com/sjzar/chatlog/pkg/version"
 )
@@ -290,8 +291,16 @@ func (s *Service) handleMCPChatLog(ctx context.Context, request mcp.CallToolRequ
 	if req.Offset < 0 {
 		req.Offset = 0
 	}
+	var o = opts.NewOptsGetMessages()
+	o.StartTime = start
+	o.EndTime = end
+	o.Talker = req.Talker
+	o.Sender = req.Sender
+	o.Keyword = req.Keyword
+	o.Limit = req.Limit
+	o.Offset = req.Offset
 
-	messages, err := s.db.GetMessages(start, end, req.Talker, req.Sender, req.Keyword, req.Limit, req.Offset)
+	messages, err := s.db.GetMessages(*o)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to get messages")
 		return errors.ErrMCPTool(err), nil
