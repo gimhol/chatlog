@@ -178,9 +178,9 @@ func (s *Service) handleChatlog(c *gin.Context) {
 	}
 }
 
-type GetContactsResp struct {
-	Account string           `json:"account"`
-	Items   []*model.Contact `json:"items"`
+type ContactItem struct {
+	model.Contact
+	Account string `json:"account"`
 }
 
 func (s *Service) handleContacts(c *gin.Context) {
@@ -206,10 +206,20 @@ func (s *Service) handleContacts(c *gin.Context) {
 	switch format {
 	case "json":
 		// json
-		c.JSON(http.StatusOK, GetContactsResp{
-			Account: s.sys.GetAccount(),
-			Items:   list.Items,
-		})
+		items := make([]ContactItem, len(list.Items))
+		for i, v := range list.Items {
+			items[i] = ContactItem{
+				Contact: model.Contact{
+					UserName: v.UserName,
+					Alias:    v.Alias,
+					Remark:   v.Remark,
+					NickName: v.NickName,
+					IsFriend: v.IsFriend,
+				},
+				Account: s.sys.GetAccount(),
+			}
+		}
+		c.JSON(http.StatusOK, items)
 	default:
 		// csv
 		if format == "csv" {
