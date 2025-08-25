@@ -274,9 +274,9 @@ func (s *Service) handleChatRooms(c *gin.Context) {
 	}
 }
 
-type GetSessionsResp struct {
-	Account string           `json:"account"`
-	Items   []*model.Session `json:"items"`
+type SessionItem struct {
+	model.Session
+	Account string `json:"account"`
 }
 
 func (s *Service) handleSessions(c *gin.Context) {
@@ -312,11 +312,21 @@ func (s *Service) handleSessions(c *gin.Context) {
 		}
 		c.Writer.Flush()
 	case "json":
+		items := make([]SessionItem, len(sessions.Items))
+		for i, v := range sessions.Items {
+			items[i] = SessionItem{
+				Session: model.Session{
+					UserName: v.UserName,
+					NOrder:   v.NOrder,
+					NickName: v.NickName,
+					Content:  v.Content,
+					NTime:    v.NTime,
+				},
+				Account: s.sys.GetAccount(),
+			}
+		}
 		// json
-		c.JSON(http.StatusOK, GetSessionsResp{
-			Account: s.sys.GetAccount(),
-			Items:   sessions.Items,
-		})
+		c.JSON(http.StatusOK, items)
 	default:
 		c.Writer.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		c.Writer.Header().Set("Cache-Control", "no-cache")
