@@ -5,16 +5,17 @@ const (
 )
 
 type ServerConfig struct {
-	Type        string `mapstructure:"type"`
-	Platform    string `mapstructure:"platform"`
-	Version     int    `mapstructure:"version"`
-	FullVersion string `mapstructure:"full_version"`
-	DataDir     string `mapstructure:"data_dir"`
-	DataKey     string `mapstructure:"data_key"`
-	ImgKey      string `mapstructure:"img_key"`
-	WorkDir     string `mapstructure:"work_dir"`
-	HTTPAddr    string `mapstructure:"http_addr"`
-	AutoDecrypt bool   `mapstructure:"auto_decrypt"`
+	Type        string   `mapstructure:"type"`
+	Platform    string   `mapstructure:"platform"`
+	Version     int      `mapstructure:"version"`
+	FullVersion string   `mapstructure:"full_version"`
+	DataDir     string   `mapstructure:"data_dir"`
+	DataKey     string   `mapstructure:"data_key"`
+	ImgKey      string   `mapstructure:"img_key"`
+	WorkDir     string   `mapstructure:"work_dir"`
+	HTTPAddr    string   `mapstructure:"http_addr"`
+	AutoDecrypt bool     `mapstructure:"auto_decrypt"`
+	Webhook     *Webhook `mapstructure:"webhook"`
 }
 
 var ServerDefaults = map[string]any{}
@@ -56,4 +57,8 @@ func (c *ServerConfig) GetHTTPAddr() string {
 
 func (c *ServerConfig) GetFullVersion() string {
 	return c.FullVersion
+}
+
+func (c *ServerConfig) GetWebhook() *Webhook {
+	return c.Webhook
 }

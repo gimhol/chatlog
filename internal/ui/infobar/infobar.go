@@ -15,7 +15,7 @@ const (
 
 // InfoBarViewHeight info bar height.
 const (
-	InfoBarViewHeight = 8
+	InfoBarViewHeight = 9
 	accountRow        = 0
 	statusRow         = 1
 	platformRow       = 2
@@ -23,7 +23,8 @@ const (
 	dataUsageRow      = 4
 	workUsageRow      = 5
 	httpServerRow     = 6
-	rpcRow            = 7
+	rpcRow            = 8
+	autoDecryptRow    = 7
 
 	// 列索引
 	labelCol1 = 0 // 第一列标签
@@ -146,9 +147,16 @@ func New() *InfoBar {
 	table.SetCell(
 		httpServerRow,
 		labelCol2,
-		tview.NewTableCell(fmt.Sprintf(" [%s::]%s", headerColor, "Auto Decrypt:")),
+		tview.NewTableCell(fmt.Sprintf(" [%s::]%s", headerColor, "Image Key:")),
 	)
 	table.SetCell(httpServerRow, valueCol2, tview.NewTableCell(""))
+
+	table.SetCell(
+		autoDecryptRow,
+		labelCol1,
+		tview.NewTableCell(fmt.Sprintf(" [%s::]%s", headerColor, "Auto Decrypt:")),
+	)
+	table.SetCell(autoDecryptRow, valueCol1, tview.NewTableCell(""))
 
 	table.SetCell(
 		rpcRow,
@@ -208,9 +216,13 @@ func (info *InfoBar) UpdateHTTPServer(server string) {
 	info.table.GetCell(httpServerRow, valueCol1).SetText(server)
 }
 
+func (info *InfoBar) UpdateImageKey(key string) {
+	info.table.GetCell(httpServerRow, valueCol2).SetText(key)
+}
+
 // UpdateAutoDecrypt updates Auto Decrypt value.
 func (info *InfoBar) UpdateAutoDecrypt(text string) {
-	info.table.GetCell(httpServerRow, valueCol2).SetText(text)
+	info.table.GetCell(autoDecryptRow, valueCol1).SetText(text)
 }
 
 func (info *InfoBar) UpdateRPC(running bool, network string, address string) {
