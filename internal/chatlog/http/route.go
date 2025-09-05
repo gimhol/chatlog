@@ -497,5 +497,6 @@ func (s *Service) GetInfo(c *gin.Context) {
 		"autoDecrypt": s.conf.GetAutoDecrypt(),
 		"pid":         s.sys.GetPID(),
 		"exePath":     s.sys.GetExePath(),
+		"imgKey":      s.conf.GetImgKey(),
 	})
 }

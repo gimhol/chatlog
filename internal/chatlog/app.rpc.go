@@ -160,3 +160,8 @@ func (a *App) GetHistory(args *struct{}, reply *map[string]conf.ProcessConfig) e
 	*reply = a.m.ctx.History
 	return nil
 }
+
+func (a *App) GetImgKey(args *struct{}, reply *string) error {
+	*reply = a.m.ctx.ImgKey
+	return nil
+}
