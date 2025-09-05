@@ -89,9 +89,8 @@ func (a *App) GetDataDir(args *struct{}, reply *string) error {
 	return nil
 }
 func (a *App) GetDataKey(args *struct{}, reply *string) error {
-	err := a.m.GetDataKey()
 	*reply = a.m.ctx.DataKey
-	return err
+	return nil
 }
 func (a *App) GetDataUsage(args *struct{}, reply *string) error {
 	*reply = a.m.ctx.DataUsage
@@ -164,4 +163,16 @@ func (a *App) GetHistory(args *struct{}, reply *map[string]conf.ProcessConfig) e
 func (a *App) GetImgKey(args *struct{}, reply *string) error {
 	*reply = a.m.ctx.ImgKey
 	return nil
+}
+
+type Keys struct {
+	DataKey string
+	ImgKey  string
+}
+
+func (a *App) SearchKeys(args *struct{}, reply *Keys) error {
+	err := a.m.GetDataKey()
+	reply.DataKey = a.m.ctx.DataKey
+	reply.ImgKey = a.m.ctx.ImgKey
+	return err
 }
